@@ -1,84 +1,111 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AllkuApi.Data;
+using AllkuApi.DataTransferObjects_DTO_;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using AllkuApi.Models;
-using AllkuApi.Data;
-using AllkuApi.Dtos;
+using System.Data;
 
-namespace AllkuApi.Controllers
+[Route("api/auth")]
+[ApiController]
+public class AuthController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class AuthController : ControllerBase
+    private readonly SqlConnection _connection;
+    private readonly AllkuDbContext _dbContext;
+    private const string _claveMaestra = "TuClaveSecretaUnica2024$"; // La clave maestra que solo tú conoces
+
+    public AuthController(IConfiguration configuration)
     {
-        private readonly AllkuDbContext _context;
-        private readonly IConfiguration _configuration;
+        _connection = new SqlConnection(configuration.GetConnectionString("DefaultConnection"));
+    }
 
-        public AuthController(AllkuDbContext context, IConfiguration configuration)
-        {
-            _context = context;
-            _configuration = configuration;
-        }
-        private string GenerarToken(Manejo_Perfiles usuario)
-        {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
-
-            var claims = new List<Claim>
+    // Endpoint para registrar un administrador
+    [HttpPost("registrar-administrador")]
+    public async Task<IActionResult> RegistrarAdministrador([FromBody] RegistrarAdministradorDto dto)
     {
-        new Claim(ClaimTypes.Name, usuario.nombre_usuario),
-        new Claim(ClaimTypes.Role, usuario.tipo_perfil),
-        new Claim("id_perfil", usuario.id_perfil.ToString())
-    };
-
-            var token = new JwtSecurityToken(
-                claims: claims,
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: creds
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+        if (dto.ClaveMaestra != _claveMaestra)
+        {
+            return Unauthorized("Clave maestra incorrecta");
         }
 
-
-        [HttpPost("login")]
-        public async Task<ActionResult> Login(LoginDto loginDto)
+        var cmd = new SqlCommand("RegistrarAdministrador", _connection)
         {
-            var usuario = await _context.Manejo_Perfiles
-                .FirstOrDefaultAsync(u => u.nombre_usuario == loginDto.NombreUsuario &&
-                                          u.contrasena == loginDto.Contrasena);
+            CommandType = CommandType.StoredProcedure
+        };
 
-            if (usuario == null)
-                return Unauthorized("Credenciales inválidas");
+        cmd.Parameters.AddWithValue("@cedula_administrador", dto.CedulaAdministrador);
+        cmd.Parameters.AddWithValue("@nombre_administrador", dto.NombreAdministrador);
+        cmd.Parameters.AddWithValue("@usuario_administrador", dto.UsuarioAdministrador);
+        cmd.Parameters.AddWithValue("@correo_administrador", dto.CorreoAdministrador);
+        cmd.Parameters.AddWithValue("@contrasena_administrador", dto.ContrasenaAdministrador);
+        cmd.Parameters.AddWithValue("@clave_maestra", dto.ClaveMaestra);
 
-            var token = GenerarToken(usuario);
-            return Ok(new { token, tipoPerfil = usuario.tipo_perfil });
+        try
+        {
+            _connection.Open();
+            await cmd.ExecuteNonQueryAsync();
+            _connection.Close();
+            return Ok("Administrador registrado exitosamente");
         }
-
-        [HttpPost("register")]
-        public async Task<ActionResult> Register(RegisterDto registerDto)
+        catch (Exception ex)
         {
-            // Validar que el usuario no exista
-            if (await _context.Manejo_Perfiles.AnyAsync(x => x.nombre_usuario == registerDto.NombreUsuario))
-                return BadRequest("Usuario ya existe");
+            return BadRequest($"Error al registrar el administrador: {ex.Message}");
+        }
+    }
 
-            var nuevoUsuario = new Manejo_Perfiles
-            {
-                nombre_usuario = registerDto.NombreUsuario,
-                contrasena = registerDto.Contrasena,
-                tipo_perfil = registerDto.TipoPerfil,
-                id_administrador = registerDto.IdAdministrador,
-                cedula_dueno = registerDto.CedulaDueno,
-                id_paseador = registerDto.IdPaseador
-            };
+    // Endpoint para registrar un usuario normal (dueño o paseador)
+    [HttpPost("registrar-usuario")]
+    public async Task<IActionResult> RegistrarUsuario([FromBody] RegistrarUsuarioDto dto)
+    {
+        var cmd = new SqlCommand("RegistrarUsuario", _connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
 
-            _context.Manejo_Perfiles.Add(nuevoUsuario);
-            await _context.SaveChangesAsync();
+        cmd.Parameters.AddWithValue("@cedula", dto.Cedula);
+        cmd.Parameters.AddWithValue("@nombre", dto.Nombre);
+        cmd.Parameters.AddWithValue("@correo", dto.Correo);
+        cmd.Parameters.AddWithValue("@usuario", dto.Usuario);
+        cmd.Parameters.AddWithValue("@contrasena", dto.Contrasena);
+        cmd.Parameters.AddWithValue("@rol", dto.Rol);
 
+        try
+        {
+            _connection.Open();
+            await cmd.ExecuteNonQueryAsync();
+            _connection.Close();
             return Ok("Usuario registrado exitosamente");
         }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error al registrar el usuario: {ex.Message}");
+        }
+
+
+    }
+
+    // Endpoint de login
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    {
+        // Verificar las credenciales utilizando el método IniciarSesion
+        var usuario = await _dbContext.IniciarSesion(request.NombreUsuario, request.Contrasena);
+
+        if (usuario != null)
+        {
+            // Si las credenciales son correctas, devolver un mensaje de éxito
+            return Ok(new { success = true, message = "Login exitoso", user = usuario });
+        }
+        else
+        {
+            // Si las credenciales son incorrectas, devolver un mensaje de error
+            return BadRequest(new { success = false, message = "Credenciales incorrectas" });
+        }
+    }
+
+    // Modelo para el login
+    public class LoginRequest
+    {
+        public string NombreUsuario { get; set; }
+        public string Contrasena { get; set; }
     }
 }

@@ -6,15 +6,28 @@ namespace AllkuApi.Models
     public class Paseador
     {
         [Key]
-        public int id_paseador { get; set; }
-        public string? nombre_paseador { get; set; }
-        public string? apellido_paseador { get; set; }
-        public string? direccion_paseador { get; set; }
-        public string? celular_paseador { get; set; }
-        public string? correo_paseador { get; set; }
-        public int? id_canino { get; set; }
+        [Column("cedula_paseador")]
+        public string CedulaPaseador { get; set; } = string.Empty;
 
-        [ForeignKey("id_canino")]
-        public virtual Canino? Canino { get; set; }
+        [Column("nombre_paseador")]
+        public string NombrePaseador { get; set; } = string.Empty;
+
+        [Column("apellido_paseador")]
+        public string ApellidoPaseador { get; set; } = string.Empty;
+
+        [Column("direccion_paseador")]
+        public string DireccionPaseador { get; set; } = string.Empty;
+
+        [Column("celular_paseador")]
+        public string CelularPaseador { get; set; } = string.Empty;
+
+        [Column("correo_paseador")]
+        public string CorreoPaseador { get; set; } = string.Empty;
+
+        [ForeignKey("Canino")]
+        [Column("id_canino")]
+        public int? IdCanino { get; set; }
+
+        public Canino? Canino { get; set; }
     }
 }

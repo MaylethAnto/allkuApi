@@ -41,13 +41,13 @@ namespace AllkuApi.Controllers
             _context.Dueno.Add(dueno);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetDueno), new { cedula = dueno.cedula_dueno }, dueno);
+            return CreatedAtAction(nameof(GetDueno), new { cedula = dueno.CedulaDueno}, dueno);
         }
 
         [HttpPut("{cedula}")]
         public async Task<IActionResult> PutDueno(string cedula, Dueno dueno)
         {
-            if (cedula != dueno.cedula_dueno)
+            if (cedula != dueno.CedulaDueno)
             {
                 return BadRequest();
             }
@@ -90,7 +90,7 @@ namespace AllkuApi.Controllers
 
         private bool DuenoExists(string cedula)
         {
-            return _context.Dueno.Any(e => e.cedula_dueno == cedula);
+            return _context.Dueno.Any(e => e.CedulaDueno == cedula);
         }
     }
 }

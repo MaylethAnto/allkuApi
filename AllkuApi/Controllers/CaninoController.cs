@@ -19,15 +19,15 @@ namespace AllkuApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Canino>>> GetCaninos()
         {
-            return await _context.Canino.Include(c => c.Dueno).ToListAsync();
+            return await _context.Canino.Include(c => c.CedulaDueno).ToListAsync();
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Canino>> GetCanino(int id)
         {
             var canino = await _context.Canino
-                .Include(c => c.Dueno)
-                .FirstOrDefaultAsync(c => c.id_canino == id);
+                .Include(c => c.CedulaDueno)
+                .FirstOrDefaultAsync(c => c.IdCanino == id);
 
             if (canino == null)
             {
@@ -43,13 +43,13 @@ namespace AllkuApi.Controllers
             _context.Canino.Add(canino);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetCanino), new { id = canino.id_canino }, canino);
+            return CreatedAtAction(nameof(GetCanino), new { id = canino.IdCanino }, canino);
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> PutCanino(int id, Canino canino)
         {
-            if (id != canino.id_canino)
+            if (id != canino.IdCanino)
             {
                 return BadRequest();
             }
@@ -92,7 +92,7 @@ namespace AllkuApi.Controllers
 
         private bool CaninoExists(int id)
         {
-            return _context.Canino.Any(e => e.id_canino == id);
+            return _context.Canino.Any(e => e.IdCanino == id);
         }
     }
 }

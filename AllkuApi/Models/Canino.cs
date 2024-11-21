@@ -6,15 +6,24 @@ namespace AllkuApi.Models
     public class Canino
     {
         [Key]
-        public int id_canino { get; set; }
-        public string? nombre_canino { get; set; }
-        public int? edad_canino { get; set; }
-        public string? raza_canino { get; set; }
-        public decimal? peso_canino { get; set; }
-        public byte[]? foto_canino { get; set; }
-        public string? cedula_dueno { get; set; }
-        
-        [ForeignKey("cedula_dueno")]
-        public virtual Dueno? Dueno { get; set; }
+        public int IdCanino { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        public string NombreCanino { get; set; }
+
+        public int EdadCanino { get; set; }
+
+        [StringLength(50)]
+        public string RazaCanino { get; set; }
+
+        public decimal PesoCanino { get; set; }
+
+        public byte[] FotoCanino { get; set; }
+
+        // Relación con Dueno
+        public string CedulaDueno { get; set; }
+        public Dueno Dueno { get; set; }
     }
+
 }

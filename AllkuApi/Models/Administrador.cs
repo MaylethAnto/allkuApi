@@ -1,14 +1,30 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using AllkuApi.Models;
 
-namespace AllkuApi.Models
+
+public class Administrador
 {
-    public class Administrador
-    {
-        [Key]
-        public int id_administrador { get; set; }
-        public string? nombre_administrador { get; set; }
-        public string? usuario_administrador { get; set; }
-        public string? correo_administrador { get; set; }
-        public string? contrasena_administrador { get; set; }
-    }
+    [Key]
+    [StringLength(10)]
+    public string CedulaAdministrador { get; set; }
+
+    [Required]
+    [StringLength(50)]
+    public string NombreAdministrador { get; set; }
+
+    [StringLength(50)]
+    public string UsuarioAdministrador { get; set; }
+
+    [StringLength(50)]
+    public string CorreoAdministrador { get; set; }
+
+    [Required]
+    [StringLength(50)]
+    public string ContrasenaAdministrador { get; set; }
+
+    // Relación con Manejo_Perfiles
+    public ICollection<Manejo_Perfiles> ManejoPerfiles { get; set; }
 }
+
+

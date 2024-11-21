@@ -2,6 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using AllkuApi.Data;
 using AllkuApi.Models;
+using Microsoft.Data.SqlClient;
+using System.Data;
 
 namespace AllkuApi.Controllers
 {
@@ -23,9 +25,9 @@ namespace AllkuApi.Controllers
             return await _context.Administrador.ToListAsync();
         }
 
-        // GET: api/Administrador/5
+        // GET: api/Administrador/{cedula}
         [HttpGet("{id}")]
-        public async Task<ActionResult<Administrador>> GetAdministrador(int id)
+        public async Task<ActionResult<Administrador>> GetAdministrador(string id)
         {
             var administrador = await _context.Administrador.FindAsync(id);
 
@@ -37,21 +39,37 @@ namespace AllkuApi.Controllers
             return administrador;
         }
 
+
         // POST: api/Administrador
         [HttpPost]
-        public async Task<ActionResult<Administrador>> PostAdministrador(Administrador administrador)
+        public async Task<IActionResult> PostAdministrador([FromBody] Administrador administrador)
         {
-            _context.Administrador.Add(administrador);
-            await _context.SaveChangesAsync();
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
 
-            return CreatedAtAction(nameof(GetAdministrador), new { id = administrador.id_administrador }, administrador);
+                _context.Administrador.Add(administrador);
+                await _context.SaveChangesAsync();
+                return CreatedAtAction(nameof(GetAdministrador), new { id = administrador.CedulaAdministrador }, administrador);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Hubo un error al guardar el administrador.", error = ex.Message });
+            }
         }
 
-        // PUT: api/Administrador/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutAdministrador(int id, Administrador administrador)
+
+
+
+
+        // PUT: api/Administrador/{cedula}
+        [HttpPut("{cedula}")]
+        public async Task<IActionResult> PutAdministrador(string cedula, Administrador administrador)
         {
-            if (id != administrador.id_administrador)
+            if (cedula != administrador.CedulaAdministrador)
             {
                 return BadRequest();
             }
@@ -64,7 +82,7 @@ namespace AllkuApi.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!AdministradorExists(id))
+                if (!AdministradorExists(cedula))
                 {
                     return NotFound();
                 }
@@ -77,11 +95,11 @@ namespace AllkuApi.Controllers
             return NoContent();
         }
 
-        // DELETE: api/Administrador/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteAdministrador(int id)
+        // DELETE: api/Administrador/{cedula}
+        [HttpDelete("{cedula}")]
+        public async Task<IActionResult> DeleteAdministrador(string cedula)
         {
-            var administrador = await _context.Administrador.FindAsync(id);
+            var administrador = await _context.Administrador.FindAsync(cedula);
             if (administrador == null)
             {
                 return NotFound();
@@ -93,9 +111,9 @@ namespace AllkuApi.Controllers
             return NoContent();
         }
 
-        private bool AdministradorExists(int id)
+        private bool AdministradorExists(string cedula)
         {
-            return _context.Administrador.Any(e => e.id_administrador == id);
+            return _context.Administrador.Any(e => e.CedulaAdministrador == cedula);
         }
     }
 }
