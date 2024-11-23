@@ -1,4 +1,5 @@
 ﻿using AllkuApi.Data;
+using AllkuApi.Models;
 using AllkuApi.DataTransferObjects_DTO_;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -245,12 +246,10 @@ public class AuthController : ControllerBase
 
         if (usuario != null)
         {
-            // Si las credenciales son correctas, devolver un mensaje de éxito
             return Ok(new { success = true, message = "Login exitoso", user = usuario });
         }
         else
         {
-            // Si las credenciales son incorrectas, devolver un mensaje de error
             return BadRequest(new { success = false, message = "Credenciales incorrectas" });
         }
     }
@@ -312,12 +311,4 @@ public class AuthController : ControllerBase
         }
     }
 
-
-
-    // Modelo para el login
-    public class LoginRequest
-    {
-        public string NombreUsuario { get; set; }
-        public string Contrasena { get; set; }
-    }
 }
