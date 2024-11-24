@@ -185,12 +185,15 @@ public class AuthController : ControllerBase
             {
                 usuarios.Add(new
                 {
-                    Cedula = reader["Cedula"],
-                    Nombre = reader["Nombre"],
-                    Correo = reader["Correo"],
-                    Usuario = reader["Usuario"],
-                    Rol = reader["Rol"],
-                    Direccion = reader["Direccion"]
+                    Cedula = reader["cedula_usuario"],
+                    Nombre = reader["nombre_usuario"],
+                    Correo = reader["correo_usuario"],
+                    Usuario = reader["usuario_usuario"],
+                    Rol = reader["rol_usuario"],
+                    Direccion = reader["direccion_usuario"],
+                    Celular = reader["celular_usuario"]
+
+
                 });
             }
 
@@ -236,24 +239,6 @@ public class AuthController : ControllerBase
 
 
     }
-
-    // Endpoint de login
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
-    {
-        // Verificar las credenciales utilizando el método IniciarSesion
-        var usuario = await _dbContext.IniciarSesion(request.NombreUsuario, request.Contrasena);
-
-        if (usuario != null)
-        {
-            return Ok(new { success = true, message = "Login exitoso", user = usuario });
-        }
-        else
-        {
-            return BadRequest(new { success = false, message = "Credenciales incorrectas" });
-        }
-    }
-
 
     //Actualizar usuario normal (dueño o paseador)
     [HttpPut("actualizar-usuario/{Cedula}")]
@@ -310,5 +295,7 @@ public class AuthController : ControllerBase
             return BadRequest($"Error al eliminar el usuario: {ex.Message}");
         }
     }
+
+
 
 }
