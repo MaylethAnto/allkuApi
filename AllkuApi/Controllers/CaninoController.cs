@@ -94,5 +94,17 @@ namespace AllkuApi.Controllers
         {
             return _context.Canino.Any(e => e.IdCanino == id);
         }
+
+        [HttpGet("usuarios")]
+        public async Task<IActionResult> GetUsuarioPorCedula([FromQuery] string cedulaDueno)
+        {
+            var usuario = await _context.Dueno.FirstOrDefaultAsync(u => u.CedulaDueno == cedulaDueno);
+            if (usuario == null)
+            {
+                return NotFound("Usuario no encontrado");
+            }
+            return Ok(usuario);
+        }
+
     }
 }

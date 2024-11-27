@@ -18,102 +18,40 @@ namespace AllkuApi.Controllers
             _context = context;
         }
 
-        // GET: api/Administrador
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Administrador>>> GetAdministradores()
+        // Obtener todos los paseadores
+        [HttpGet("paseadores")]
+        public async Task<IActionResult> GetPaseadores()
         {
-            return await _context.Administrador.ToListAsync();
+            var paseadores = await _context.Paseador.ToListAsync();
+            if (paseadores == null || paseadores.Count == 0)
+            {
+                return NotFound("No se encontraron paseadores.");
+            }
+            return Ok(paseadores);
         }
 
-        // GET: api/Administrador/{cedula}
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Administrador>> GetAdministrador(string id)
+        // Obtener todos los dueños
+        [HttpGet("dueños")]
+        public async Task<IActionResult> GetDueños()
         {
-            var administrador = await _context.Administrador.FindAsync(id);
-
-            if (administrador == null)
+            var duenos = await _context.Dueno.ToListAsync();
+            if (duenos == null || duenos.Count == 0)
             {
-                return NotFound();
+                return NotFound("No se encontraron dueños.");
             }
-
-            return administrador;
+            return Ok(duenos);
         }
 
-
-        // POST: api/Administrador
-        [HttpPost]
-        public async Task<IActionResult> PostAdministrador([FromBody] Administrador administrador)
+        // Obtener todas las mascotas
+        [HttpGet("caninos")]
+        public async Task<IActionResult> GetCaninos()
         {
-            try
+            var caninos = await _context.Canino.ToListAsync();
+            if (caninos == null || caninos.Count == 0)
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                _context.Administrador.Add(administrador);
-                await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetAdministrador), new { id = administrador.CedulaAdministrador }, administrador);
+                return NotFound("No se encontraron caninos.");
             }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = "Hubo un error al guardar el administrador.", error = ex.Message });
-            }
-        }
-
-
-
-
-
-        // PUT: api/Administrador/{cedula}
-        [HttpPut("{cedula}")]
-        public async Task<IActionResult> PutAdministrador(string cedula, Administrador administrador)
-        {
-            if (cedula != administrador.CedulaAdministrador)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(administrador).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!AdministradorExists(cedula))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
-
-        // DELETE: api/Administrador/{cedula}
-        [HttpDelete("{cedula}")]
-        public async Task<IActionResult> DeleteAdministrador(string cedula)
-        {
-            var administrador = await _context.Administrador.FindAsync(cedula);
-            if (administrador == null)
-            {
-                return NotFound();
-            }
-
-            _context.Administrador.Remove(administrador);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool AdministradorExists(string cedula)
-        {
-            return _context.Administrador.Any(e => e.CedulaAdministrador == cedula);
+            return Ok(caninos);
         }
     }
 }

@@ -1,27 +1,33 @@
-using AllkuApi.Models;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace AllkuApi.Models { 
-public class Dueno
+namespace AllkuApi.Models
 {
-    [Key]
-    [StringLength(10)]
-    public string CedulaDueno { get; set; }
+    public class Dueno
+    {
+        [Key]
+        [Column("cedula_dueno")]
+        [StringLength(10)]
+        public string CedulaDueno { get; set; }
 
-    [Required]
-    [StringLength(50)]
-    public string NombreDueno { get; set; }
+        [Column("nombre_dueno")]
+        [Required]
+        [StringLength(50)]
+        public string NombreDueno { get; set; }
 
-    [StringLength(100)]
-    public string DireccionDueno { get; set; }
+        [Column("direccion_dueno")]
+        [StringLength(100)]
+        public string DireccionDueno { get; set; }
 
-    [StringLength(15)]
-    public string CelularDueno { get; set; }
+        [Column("celular_dueno")]
+        [StringLength(15)]
+        public string CelularDueno { get; set; }
 
-    [StringLength(50)]
-    public string CorreoDueno { get; set; }
+        [Column("correo_dueno")]
+        [StringLength(50)]
+        public string CorreoDueno { get; set; }
 
-    // Relación con Canino
-    public ICollection<Canino> Caninos { get; set; }
+        // Relación con Canino
+        public List<Canino> Caninos { get; set; }
     }
 }
