@@ -37,14 +37,31 @@ namespace AllkuApi.Controllers
             return canino;
         }
 
-        [HttpPost]
+        [HttpPost("RegistrarCanino")]
         public async Task<ActionResult<Canino>> PostCanino(Canino canino)
         {
+            if (canino == null)
+            {
+                return BadRequest("Los datos del canino son requeridos.");
+            }
+
+            // Verificar si el dueño con la cédula existe
+            var dueno = await _context.Dueno
+                                      .FirstOrDefaultAsync(d => d.CedulaDueno == canino.CedulaDueno);
+
+            if (dueno == null)
+            {
+                return BadRequest("El dueño con la cédula proporcionada no existe.");
+            }
+
+            // Ahora solo guardamos el canino con la cédula del dueño
             _context.Canino.Add(canino);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetCanino), new { id = canino.IdCanino }, canino);
+            return Ok("Canino registrado exitosamente.");
         }
+
+        
 
         [HttpPut("{id}")]
         public async Task<IActionResult> PutCanino(int id, Canino canino)
@@ -98,12 +115,16 @@ namespace AllkuApi.Controllers
         [HttpGet("usuarios")]
         public async Task<IActionResult> GetUsuarioPorCedula([FromQuery] string cedulaDueno)
         {
-            var usuario = await _context.Dueno.FirstOrDefaultAsync(u => u.CedulaDueno == cedulaDueno);
-            if (usuario == null)
+            var dueno = await _context.Dueno
+          .Where(d => d.CedulaDueno == cedulaDueno)
+          .FirstOrDefaultAsync();
+
+            if (dueno == null)
             {
-                return NotFound("Usuario no encontrado");
+                return NotFound("No se encontró al dueño con esa cédula");
             }
-            return Ok(usuario);
+
+            return Ok(dueno);
         }
 
     }

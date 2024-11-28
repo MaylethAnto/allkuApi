@@ -32,9 +32,10 @@ namespace AllkuApi.Models
         public byte[] FotoCanino { get; set; }
 
         // Relación con Dueno
+        [ForeignKey("Dueno")]
         [Column("cedula_dueno")]
         public string CedulaDueno { get; set; }
-        public Dueno Dueno { get; set; }
+       
     }
 
 }

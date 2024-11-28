@@ -27,7 +27,7 @@ namespace AllkuApi.Models
         [StringLength(50)]
         public string CorreoDueno { get; set; }
 
-        // Relación con Canino
-        public List<Canino> Caninos { get; set; }
+        // Lista de caninos que posee el dueño
+        public ICollection<Canino> Caninos { get; set; }
     }
 }

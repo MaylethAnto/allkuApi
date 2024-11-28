@@ -22,11 +22,15 @@ namespace AllkuApi.Controllers
         [HttpGet("paseadores")]
         public async Task<IActionResult> GetPaseadores()
         {
-            var paseadores = await _context.Paseador.ToListAsync();
-            if (paseadores == null || paseadores.Count == 0)
-            {
-                return NotFound("No se encontraron paseadores.");
-            }
+            var paseadores = await _context.Paseador
+                .Select(p => new
+                {
+                    p.CedulaPaseador,
+                    p.NombrePaseador,
+                    IdCanino = p.IdCanino // Permitirá nulos
+                })
+                .ToListAsync();
+
             return Ok(paseadores);
         }
 

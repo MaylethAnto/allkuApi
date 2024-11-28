@@ -23,12 +23,11 @@ namespace AllkuApi.Data
             modelBuilder.Entity<Administrador>().ToTable("Administrador");
             modelBuilder.Entity<Manejo_Perfiles>().ToTable("Manejo_Perfiles");
             modelBuilder.Entity<Canino>().ToTable("Canino");
-            // Configuracion relación entre Canino y Dueno
             modelBuilder.Entity<Canino>()
-                .HasOne(c => c.Dueno)  // Relación de muchos a uno (Canino tiene un Dueno)
-                .WithMany(d => d.Caninos)  // Un Dueno tiene muchos Caninos
-                .HasForeignKey(c => c.CedulaDueno)  // La clave foránea es CedulaDueno
-                .OnDelete(DeleteBehavior.Restrict);
+           .HasOne<Dueno>()  // Relación con Dueno, pero solo a través de la cédula
+           .WithMany(d => d.Caninos)  // Relación inversa en Dueno (Caninos)
+           .HasForeignKey(c => c.CedulaDueno)  // La clave foránea es CedulaDueno en Canino
+           .OnDelete(DeleteBehavior.Cascade);
         }
         // Método para iniciar sesión (buscar en Manejo_Perfiles por nombre de usuario y contraseña)
         public async Task<Manejo_Perfiles> IniciarSesion(string nombreUsuario, string contrasena)

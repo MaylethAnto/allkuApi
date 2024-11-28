@@ -28,6 +28,5 @@ namespace AllkuApi.Models
         [Column("id_canino")]
         public int? IdCanino { get; set; }
 
-        public Canino? Canino { get; set; }
     }
 }
