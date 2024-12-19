@@ -26,12 +26,12 @@ namespace AllkuApi.Controllers
         public async Task<ActionResult<Canino>> GetCanino(int id)
         {
             var canino = await _context.Canino
-                .Include(c => c.CedulaDueno)
-                .FirstOrDefaultAsync(c => c.IdCanino == id);
+            .FirstOrDefaultAsync(c => c.IdCanino == id);
 
-            if (canino == null)
+            if (canino != null)
             {
-                return NotFound();
+                var dueno = await _context.Dueno
+                    .FirstOrDefaultAsync(d => d.CedulaDueno == canino.CedulaDueno);
             }
 
             return canino;

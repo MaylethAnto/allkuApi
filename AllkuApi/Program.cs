@@ -44,7 +44,7 @@ public class Startup
         });
 
         services.AddControllers();
-        services.AddSwaggerGen(); // Documentación de API
+        services.AddSwaggerGen();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
