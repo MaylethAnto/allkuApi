@@ -1,0 +1,8 @@
+[build]
+  builder = "Docker"
+
+[deploy]
+  command = "dotnet /app/out/AllkuApi.dll"
+
+[env]
+  ASPNETCORE_ENVIRONMENT = "Production"
