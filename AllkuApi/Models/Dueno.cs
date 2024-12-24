@@ -29,5 +29,8 @@ namespace AllkuApi.Models
 
         // Lista de caninos que posee el dueño
         public ICollection<Canino> Caninos { get; set; }
+
+        // Lista de manejo perfiles
+        public ICollection<Manejo_Perfiles> Manejo_Perfiles { get; set; }
     }
 }

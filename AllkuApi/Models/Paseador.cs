@@ -12,9 +12,6 @@ namespace AllkuApi.Models
         [Column("nombre_paseador")]
         public string NombrePaseador { get; set; } = string.Empty;
 
-        [Column("apellido_paseador")]
-        public string ApellidoPaseador { get; set; } = string.Empty;
-
         [Column("direccion_paseador")]
         public string DireccionPaseador { get; set; } = string.Empty;
 
@@ -27,6 +24,8 @@ namespace AllkuApi.Models
         [ForeignKey("Canino")]
         [Column("id_canino")]
         public int? IdCanino { get; set; }
+        
+        public ICollection<Manejo_Perfiles> Manejo_Perfiles { get; set; }
 
     }
 }

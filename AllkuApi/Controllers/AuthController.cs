@@ -5,11 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
+using AllkuApi.Services;
 
 [Route("api/auth")]
 [ApiController]
 public class AuthController : ControllerBase
 {
+   
     private readonly SqlConnection _connection;
     private readonly AllkuDbContext _dbContext;
     private const string _claveMaestra = "TuClaveSecretaUnica2024$"; // La clave maestra que solo tú conoces
@@ -17,6 +19,7 @@ public class AuthController : ControllerBase
     public AuthController(IConfiguration configuration)
     {
         _connection = new SqlConnection(configuration.GetConnectionString("DefaultConnection"));
+       
     }
 
     //GET administrador
@@ -64,6 +67,7 @@ public class AuthController : ControllerBase
     [HttpPost("registrar-administrador")]
     public async Task<IActionResult> RegistrarAdministrador([FromBody] RegistrarAdministradorDto dto)
     {
+        
         if (dto.ClaveMaestra != _claveMaestra)
         {
             return Unauthorized("Clave maestra incorrecta");

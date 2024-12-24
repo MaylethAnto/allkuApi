@@ -1,4 +1,4 @@
-using AllkuApi.Data;
+ï»¿using AllkuApi.Data;
 using AllkuApi.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,15 +24,15 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        // Configurar conexión a SQLServer
+        // Configurar conexiï¿½n a SQLServer
         services.AddDbContext<AllkuDbContext>(options =>
             options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
-        // Inyección de dependencias
+        // Inyecciï¿½n de dependencias
         services.AddScoped<AutenticacionService>();
-        services.AddSingleton<HashService>();
+        services.AddScoped<HashService>();
 
-        // Configuración de CORS
+        // Configuraciï¿½n de CORS
         services.AddCors(options =>
         {
             options.AddPolicy("AllkuPolicy", builder =>
