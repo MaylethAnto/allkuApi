@@ -41,7 +41,7 @@ namespace AllkuApi.Controllers
                     };
 
                     command.Parameters.AddWithValue("@nombre_usuario", request.NombreUsuario);
-                    command.Parameters.AddWithValue("@contrasena", request.Contrasena); 
+                    command.Parameters.AddWithValue("@contrasena", request.Contrasena);
 
                     using (var reader = await command.ExecuteReaderAsync())
                     {
@@ -53,11 +53,17 @@ namespace AllkuApi.Controllers
                             {
                                 var rol = reader["rol_usuario"].ToString();
                                 var esPrimeraVez = Convert.ToBoolean(reader["EsPrimeraVez"]);
+                                var cedulaDueno = reader["cedula_dueno"] != DBNull.Value ? reader["cedula_dueno"].ToString() : null;
+                                var celularPaseador = reader["celular_paseador"] != DBNull.Value ? reader["celular_paseador"].ToString() : null;
+                                var nombrePaseador = reader["nombre_paseador"] != DBNull.Value ? reader["nombre_paseador"].ToString() : null;
 
                                 return Ok(new
                                 {
                                     mensaje = "Login exitoso",
                                     rol,
+                                    cedulaDueno,
+                                    celularPaseador,
+                                    nombrePaseador,
                                     esPrimeraVez
                                 });
                             }
@@ -79,7 +85,6 @@ namespace AllkuApi.Controllers
             }
         }
 
-        // Método para comprobar si es la primera vez que el usuario con rol de "Dueño" inicia sesión
         [HttpGet("esprimavez")]
         public async Task<IActionResult> EsPrimeraVez([FromQuery] string username)
         {

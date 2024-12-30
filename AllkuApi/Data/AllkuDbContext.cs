@@ -17,6 +17,7 @@ namespace AllkuApi.Data
         public DbSet<Manejo_Perfiles> ManejoPerfiles { get; set; }
         public DbSet<Paseador> Paseador { get; set; }
         public DbSet<Receta> Receta { get; set; }
+        public DbSet<Notificacion> Notificaciones { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -28,6 +29,12 @@ namespace AllkuApi.Data
                      .HasOne(c => c.Dueno)
                      .WithMany(d => d.Caninos)
                      .HasForeignKey(c => c.CedulaDueno);
+
+            // Configurar Notificaciones
+            modelBuilder.Entity<Notificacion>()
+                .HasOne(n => n.Dueno)
+                .WithMany(d => d.Notificaciones)
+                .HasForeignKey(n => n.CedulaDueno);
 
             modelBuilder.Entity<Manejo_Perfiles>(entity =>
             {

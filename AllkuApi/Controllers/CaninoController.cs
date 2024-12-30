@@ -4,6 +4,7 @@ using AllkuApi.Data;
 using AllkuApi.Models;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using AllkuApi.DataTransferObjects_DTO_;
 
 namespace AllkuApi.Controllers
 {
@@ -17,27 +18,76 @@ namespace AllkuApi.Controllers
         {
             _context = context;
         }
-
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Canino>>> GetCaninos()
+        public async Task<ActionResult<IEnumerable<CaninoDto>>> GetCaninos()
         {
-            return await _context.Canino.Include(c => c.Dueno).ToListAsync();
+            var caninos = await _context.Canino
+                .Include(c => c.Dueno)
+                .Select(c => new CaninoDto
+                {
+                    IdCanino = c.IdCanino,
+                    NombreCanino = c.NombreCanino,
+                    EdadCanino = c.EdadCanino,
+                    RazaCanino = c.RazaCanino,
+                    PesoCanino = c.PesoCanino,
+                    FotoCanino = c.FotoCanino,
+                    NombreDueno = c.Dueno.NombreDueno
+                })
+                .ToListAsync();
+
+            return Ok(caninos);
+        }
+
+        [HttpGet("caninosPorCedula")]
+        public async Task<ActionResult<IEnumerable<CaninoDto>>> GetCaninosByCedulaDueno(string cedulaDueno)
+        {
+            var dueno = await _context.Dueno
+                .Include(d => d.Caninos)
+                .FirstOrDefaultAsync(d => d.CedulaDueno == cedulaDueno);
+
+            if (dueno == null)
+            {
+                return NotFound("Dueño no encontrado.");
+            }
+
+            var caninosDto = dueno.Caninos.Select(c => new CaninoDto
+            {
+                IdCanino = c.IdCanino,
+                NombreCanino = c.NombreCanino,
+                EdadCanino = c.EdadCanino,
+                RazaCanino = c.RazaCanino,
+                PesoCanino = c.PesoCanino,
+                FotoCanino = c.FotoCanino
+            }).ToList();
+
+            return Ok(caninosDto);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Canino>> GetCanino(int id)
+        public async Task<ActionResult<CaninoDto>> GetCanino(int id)
         {
             var canino = await _context.Canino
-                .FirstOrDefaultAsync(c => c.IdCanino == id);
+                .Include(c => c.Dueno)
+                .Where(c => c.IdCanino == id)
+                .Select(c => new CaninoDto
+                {
+                    IdCanino = c.IdCanino,
+                    NombreCanino = c.NombreCanino,
+                    EdadCanino = c.EdadCanino,
+                    RazaCanino = c.RazaCanino,
+                    PesoCanino = c.PesoCanino,
+                    FotoCanino = c.FotoCanino,
+                    NombreDueno = c.Dueno.NombreDueno
+                })
+                .FirstOrDefaultAsync();
 
             if (canino == null)
             {
                 return NotFound();
             }
 
-            return canino;
+            return Ok(canino);
         }
-
         [HttpPost("RegistrarCanino")]
         public async Task<ActionResult> PostCanino(CaninoRequest caninoRequest)
         {

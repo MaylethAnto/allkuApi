@@ -32,5 +32,8 @@ namespace AllkuApi.Models
 
         // Lista de manejo perfiles
         public ICollection<Manejo_Perfiles> Manejo_Perfiles { get; set; }
+        
+        // Lista de notificaciones
+        public ICollection<Notificacion> Notificaciones { get; set; }
     }
 }

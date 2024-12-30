@@ -13,8 +13,11 @@ public class Startup
         Host.CreateDefaultBuilder(args)
             .ConfigureWebHostDefaults(webBuilder =>
             {
+                // Configura la URL para que escuche en todas las interfaces de red (0.0.0.0) y en el puerto 5000
+                webBuilder.UseUrls("http://0.0.0.0:5138");  // O puedes cambiar el puerto si lo deseas
                 webBuilder.UseStartup<Startup>();
             });
+
     public IConfiguration Configuration { get; }
 
     public Startup(IConfiguration configuration)
