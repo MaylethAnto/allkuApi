@@ -1,19 +1,33 @@
-using System.ComponentModel.DataAnnotations;
+using AllkuApi.Models;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
 namespace AllkuApi.Models
 {
+    [Table("Historial_Clinico")]
     public class Historial_Clinico
     {
         [Key]
-        public int id_historial { get; set; }
-        public int? id_canino { get; set; }
-        public DateTime? fecha_historial { get; set; }
-        public string? tipo_historial { get; set; }
-        public string? descripcion_historial { get; set; }
-        public bool? notificacion_historial { get; set; }
+        [Column("id_historial")]
+        public int IdHistorial { get; set; }
 
-        [ForeignKey("id_canino")]
-        public virtual Canino? Canino { get; set; }
+        [Column("id_canino")]
+        public int IdCanino { get; set; }
+
+        [Column("fecha_historial")]
+        public DateTime FechaHistorial { get; set; }
+
+        [Column("tipo_historial")]
+        public string TipoHistorial { get; set; }
+
+        [Column("descripcion_historial")]
+        public string DescripcionHistorial { get; set; }
+
+        [Column("notificacion_historial")]
+        public bool NotificacionHistorial { get; set; }
+
+        // Propiedad de navegación
+        [ForeignKey("IdCanino")]
+        public Canino Canino { get; set; }
     }
 }

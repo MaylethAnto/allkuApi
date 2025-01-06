@@ -1,61 +1,62 @@
-﻿using AllkuApi.Data;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Data;
+using System.Threading.Tasks;
 using AllkuApi.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace AllkuApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class GPSController : ControllerBase
+    public class GpsController : ControllerBase
     {
-        private readonly AllkuDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public GPSController(AllkuDbContext context)
+        public GpsController(IConfiguration configuration)
         {
-            _context = context;
+            _configuration = configuration;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetGPS()
+        [HttpGet("distancia")]
+        public async Task<ActionResult<DistanciaRecorrida>> GetDistanciaRecorrida(int id_canino, DateTime fecha_inicio, DateTime fecha_fin)
         {
-            var gps = await _context.GPS.ToListAsync();
-            return Ok(gps);
-        }
-        [HttpPost]
-        public async Task<IActionResult> CreateGPS([FromBody] GPS gPS)
-        {
-            if (ModelState.IsValid)
+            var distancia = new DistanciaRecorrida
             {
-                _context.GPS.Add(gPS);
-                await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetGPS), new { id = gPS.id_gps }, gPS);
+                FechaInicio = fecha_inicio,
+                FechaFin = fecha_fin
+            };
 
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    await conn.OpenAsync();
+
+                    using (SqlCommand cmd = new SqlCommand("ObtenerDistanciaRecorrida", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@id_canino", id_canino);
+                        cmd.Parameters.AddWithValue("@fecha_inicio", fecha_inicio);
+                        cmd.Parameters.AddWithValue("@fecha_fin", fecha_fin);
+
+                        using (SqlDataReader reader = await cmd.ExecuteReaderAsync())
+                        {
+                            if (reader.Read())
+                            {
+                                distancia.DistanciaTotal = reader["DistanciaTotal"] != DBNull.Value ? (decimal)reader["DistanciaTotal"] : 0;
+                            }
+                        }
+                    }
+                }
+
+                return Ok(distancia);
             }
-            return BadRequest(ModelState);
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateGPS(int id, [FromBody] GPS gPS)
-        {
-            if (id != gPS.id_gps) return BadRequest();
-
-            _context.Entry(gPS).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteGPS(int id, [FromBody] GPS gPS)
-        {
-            var gPS1 = await _context.GPS.FindAsync(id);
-            if (gPS == null) return NotFound();
-
-            _context.GPS.Remove(gPS);
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
-
-
     }
 }

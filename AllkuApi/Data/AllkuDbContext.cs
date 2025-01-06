@@ -11,9 +11,8 @@ namespace AllkuApi.Data
         public DbSet<Administrador> Administrador { get; set; }
         public DbSet<Canino> Canino { get; set; }
         public DbSet<Dueno> Dueno { get; set; }
-        public DbSet<Ejercicio> Ejercicios { get; set; }
         public DbSet<GPS> GPS { get; set; }
-        public DbSet<Historial_Clinico> Historial_Clinico { get; set; }
+        public DbSet<Historial_Clinico> Historiales_Clinico { get; set; }
         public DbSet<Manejo_Perfiles> ManejoPerfiles { get; set; }
         public DbSet<Paseador> Paseador { get; set; }
         public DbSet<Receta> Receta { get; set; }
@@ -29,6 +28,10 @@ namespace AllkuApi.Data
                      .HasOne(c => c.Dueno)
                      .WithMany(d => d.Caninos)
                      .HasForeignKey(c => c.CedulaDueno);
+
+            modelBuilder.Entity<Historial_Clinico>().ToTable("Historial_Clinico");
+
+            base.OnModelCreating(modelBuilder);
 
             // Configurar Notificaciones
             modelBuilder.Entity<Notificacion>()

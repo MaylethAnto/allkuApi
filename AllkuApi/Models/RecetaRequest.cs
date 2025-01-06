@@ -1,21 +1,19 @@
-using AllkuApi.Models;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
-
 
 namespace AllkuApi.Models
 {
-    public class Receta
+    public class RecetaRequest
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Required]
         public int id_receta { get; set; }
+        [Required]
         public string? nombre_receta { get; set; }
+        [Required]
         public string? descripcion_receta { get; set; }
+        [Required]
         public byte[]? foto_receta { get; set; }
+        [Required]
         public int? id_canino { get; set; }
-
-        [ForeignKey("id_canino")]
-        public virtual Canino? Canino { get; set; }
     }
 }
