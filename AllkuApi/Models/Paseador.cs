@@ -20,6 +20,8 @@ namespace AllkuApi.Models
 
         [Column("correo_paseador")]
         public string CorreoPaseador { get; set; } = string.Empty;
+        [Column("esta_disponible")]
+        public bool EstaDisponible { get; set; } = true;
 
         [ForeignKey("Canino")]
         [Column("id_canino")]

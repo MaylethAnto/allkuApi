@@ -30,12 +30,44 @@ namespace AllkuApi.Controllers
                     fecha_historial = h.FechaHistorial,
                     tipo_historial = h.TipoHistorial,
                     descripcion_historial = h.DescripcionHistorial,
-                    notificacion_historial = h.NotificacionHistorial,
                     id_canino = h.IdCanino
                 })
                 .ToListAsync();
 
             return Ok(historial);
+        }
+
+        // GET: api/Canino/HistorialesClinico/{idCanino}
+        [HttpGet("Canino/{idCanino}")]
+        public async Task<ActionResult<IEnumerable<HistorialClinicoDto>>> GetHistorialesPorCanino(int idCanino)
+        {
+            try
+            {
+                var historiales = await _context.Historiales_Clinico
+                    .Include(h => h.Canino)
+                    .Where(h => h.IdCanino == idCanino)
+                    .OrderByDescending(h => h.FechaHistorial)
+                    .Select(h => new HistorialClinicoDto
+                    {
+                        id_historial = h.IdHistorial,
+                        fecha_historial = h.FechaHistorial,
+                        tipo_historial = h.TipoHistorial,
+                        descripcion_historial = h.DescripcionHistorial,
+                        id_canino = h.IdCanino
+                    })
+                    .ToListAsync();
+
+                if (!historiales.Any())
+                {
+                    return NotFound($"No se encontraron historiales clínicos para el canino con ID: {idCanino}");
+                }
+
+                return Ok(historiales);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Error interno del servidor: {ex.Message}" });
+            }
         }
 
         // Acción POST para crear un historial clínico
@@ -48,7 +80,9 @@ namespace AllkuApi.Controllers
             }
 
             // Verificar si el id del canino existe 
-            var canino = await _context.Canino.FirstOrDefaultAsync(c => c.IdCanino == historialRequest.id_canino);
+            var canino = await _context.Canino
+                .Include(c => c.Dueno)
+                .FirstOrDefaultAsync(c => c.IdCanino == historialRequest.id_canino);
             if (canino == null)
             {
                 return NotFound($"Canino con id {historialRequest.id_canino} no encontrado.");
@@ -59,7 +93,6 @@ namespace AllkuApi.Controllers
                 FechaHistorial = historialRequest.fecha_historial,
                 TipoHistorial = historialRequest.tipo_historial,
                 DescripcionHistorial = historialRequest.descripcion_historial,
-                NotificacionHistorial = historialRequest.notificacion_historial,
                 IdCanino = historialRequest.id_canino,
                 Canino = canino
             };
@@ -67,6 +100,19 @@ namespace AllkuApi.Controllers
             // Guardar el Historial 
             _context.Historiales_Clinico.Add(historial);
             await _context.SaveChangesAsync();
+
+            // Crear la notificación para el dueño del canino
+            var notificacion = new Notificacion
+            {
+                Mensaje = $"Recordatorio: {historial.DescripcionHistorial}",
+                CedulaDueno = canino.Dueno.CedulaDueno,
+                Fecha = historial.FechaHistorial, // Usar la fecha del historial para la notificación
+                Leida = false
+            };
+
+            _context.Notificaciones.Add(notificacion);
+            await _context.SaveChangesAsync();
+
             return Ok("Historial Registrado Exitosamente");
         }
 

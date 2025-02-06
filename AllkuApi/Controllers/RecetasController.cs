@@ -3,7 +3,8 @@ using AllkuApi.Data;
 using AllkuApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
+using System.IO;
+using System.Threading.Tasks;
 
 namespace AllkuApi.Controllers
 {
@@ -26,20 +27,28 @@ namespace AllkuApi.Controllers
             return Ok(recetas);
         }
 
-
-
-
         // POST: api/Recetas
         [HttpPost]
-        public async Task<IActionResult> CreateReceta([FromBody] RecetaRequest createRecetaRequest)
+        public async Task<IActionResult> CreateReceta([FromForm] RecetaRequest createRecetaRequest)
         {
             if (ModelState.IsValid)
             {
+                byte[]? fotoRecetaBytes = null;
+
+                if (createRecetaRequest.foto_receta != null)
+                {
+                    using (var ms = new MemoryStream())
+                    {
+                        await createRecetaRequest.foto_receta.CopyToAsync(ms);
+                        fotoRecetaBytes = ms.ToArray();
+                    }
+                }
+
                 var receta = new Receta
                 {
                     nombre_receta = createRecetaRequest.nombre_receta,
                     descripcion_receta = createRecetaRequest.descripcion_receta,
-                    foto_receta = createRecetaRequest.foto_receta,
+                    foto_receta = fotoRecetaBytes,
                     id_canino = createRecetaRequest.id_canino
                 };
 
@@ -52,21 +61,37 @@ namespace AllkuApi.Controllers
 
         // PUT: api/Recetas/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateReceta(int id, [FromBody] RecetaRequest recetaRequest)
+        public async Task<IActionResult> UpdateReceta(int id, [FromForm] RecetaRequest recetaRequest)
         {
             if (id != recetaRequest.id_receta) return BadRequest();
 
             var receta = await _context.Receta.FindAsync(id);
             if (receta == null) return NotFound();
 
-            receta.nombre_receta = recetaRequest.nombre_receta;
-            receta.descripcion_receta = recetaRequest.descripcion_receta;
-            receta.foto_receta = recetaRequest.foto_receta;
-            receta.id_canino = recetaRequest.id_canino;
+            if (ModelState.IsValid)
+            {
+                byte[]? fotoRecetaBytes = null;
 
-            _context.Entry(receta).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-            return NoContent();
+                if (recetaRequest.foto_receta != null)
+                {
+                    using (var ms = new MemoryStream())
+                    {
+                        await recetaRequest.foto_receta.CopyToAsync(ms);
+                        fotoRecetaBytes = ms.ToArray();
+                    }
+                }
+
+                receta.nombre_receta = recetaRequest.nombre_receta;
+                receta.descripcion_receta = recetaRequest.descripcion_receta;
+                receta.foto_receta = fotoRecetaBytes;
+                receta.id_canino = recetaRequest.id_canino;
+
+                _context.Entry(receta).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+
+            return BadRequest(ModelState);
         }
 
         // DELETE: api/Recetas/5

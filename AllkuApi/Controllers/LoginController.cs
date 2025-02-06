@@ -22,13 +22,29 @@ namespace AllkuApi.Controllers
         }
 
         [HttpPost("Login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        [Consumes("application/json", "application/x-www-form-urlencoded")] // Acepta tanto JSON como form-urlencoded
+        public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
         {
             try
             {
-                if (string.IsNullOrEmpty(request.NombreUsuario) || string.IsNullOrEmpty(request.Contrasena))
+                // Si los datos vienen como form-urlencoded, intentar obtenerlos del FormData
+                if (request == null && Request.HasFormContentType)
                 {
-                    return BadRequest(new { mensaje = "Usuario y contraseña son requeridos" });
+                    var form = await Request.ReadFormAsync();
+                    request = new LoginRequest
+                    {
+                        NombreUsuario = form["NombreUsuario"],
+                        Contrasena = form["Contrasena"]
+                    };
+                }
+
+                if (request == null || string.IsNullOrEmpty(request.NombreUsuario) || string.IsNullOrEmpty(request.Contrasena))
+                {
+                    return BadRequest(new LoginResponse
+                    {
+                        Mensaje = "Usuario y contraseña son requeridos",
+                        Exitoso = false
+                    });
                 }
 
                 using (var connection = new SqlConnection(_connectionString))
@@ -51,48 +67,79 @@ namespace AllkuApi.Controllers
 
                             if (mensaje == "Login exitoso")
                             {
-                                var rol = reader["rol_usuario"].ToString();
-                                var esPrimeraVez = Convert.ToBoolean(reader["EsPrimeraVez"]);
-                                var cedulaDueno = reader["cedula_dueno"] != DBNull.Value ? reader["cedula_dueno"].ToString() : null;
-                                var celularPaseador = reader["celular_paseador"] != DBNull.Value ? reader["celular_paseador"].ToString() : null;
-                                var nombrePaseador = reader["nombre_paseador"] != DBNull.Value ? reader["nombre_paseador"].ToString() : null;
-
-                                return Ok(new
+                                var response = new LoginResponse
                                 {
-                                    mensaje = "Login exitoso",
-                                    rol,
-                                    cedulaDueno,
-                                    celularPaseador,
-                                    nombrePaseador,
-                                    esPrimeraVez
-                                });
+                                    Mensaje = "Login exitoso",
+                                    Exitoso = true,
+                                    Rol = reader["rol_usuario"].ToString(),
+                                    EsPrimeraVez = Convert.ToBoolean(reader["EsPrimeraVez"]),
+                                    CedulaDueno = reader["cedula_dueno"] != DBNull.Value ? reader["cedula_dueno"].ToString() : null,
+                                    CedulaPaseador = reader["cedula_paseador"] != DBNull.Value ? reader["cedula_paseador"].ToString() : null,
+                                    CelularPaseador = reader["celular_paseador"] != DBNull.Value ? reader["celular_paseador"].ToString() : null,
+                                    NombrePaseador = reader["nombre_paseador"] != DBNull.Value ? reader["nombre_paseador"].ToString() : null
+                                };
+
+                                // Actualizar último inicio de sesión si es necesario
+                                await ActualizarUltimoInicioSesion(request.NombreUsuario);
+
+                                return Ok(response);
                             }
 
-                            return Unauthorized(new { mensaje });
+                            return Unauthorized(new LoginResponse
+                            {
+                                Mensaje = mensaje,
+                                Exitoso = false
+                            });
                         }
 
-                        return Unauthorized(new { mensaje = "Usuario o contraseña incorrectos" });
+                        return Unauthorized(new LoginResponse
+                        {
+                            Mensaje = "Usuario o contraseña incorrectos",
+                            Exitoso = false
+                        });
                     }
                 }
             }
             catch (SqlException ex)
             {
-                return StatusCode(500, new { mensaje = $"Error de base de datos: {ex.Message}" });
+                return StatusCode(500, new LoginResponse
+                {
+                    Mensaje = $"Error de base de datos: {ex.Message}",
+                    Exitoso = false
+                });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { mensaje = $"Error interno del servidor: {ex.Message}" });
+                return StatusCode(500, new LoginResponse
+                {
+                    Mensaje = $"Error interno del servidor: {ex.Message}",
+                    Exitoso = false
+                });
+            }
+        }
+
+        private async Task ActualizarUltimoInicioSesion(string nombreUsuario)
+        {
+            var usuario = await _context.ManejoPerfiles.FirstOrDefaultAsync(u => u.NombreUsuario == nombreUsuario);
+            if (usuario != null)
+            {
+                usuario.UltimoInicioSesion = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
             }
         }
 
         [HttpGet("esprimavez")]
-        public async Task<IActionResult> EsPrimeraVez([FromQuery] string username)
+        public async Task<ActionResult<PrimeraVezResponse>> EsPrimeraVez([FromQuery] string username)
         {
             try
             {
                 if (string.IsNullOrEmpty(username))
                 {
-                    return BadRequest(new { Message = "El nombre de usuario no puede estar vacío" });
+                    return BadRequest(new PrimeraVezResponse
+                    {
+                        Mensaje = "El nombre de usuario no puede estar vacío",
+                        Exitoso = false
+                    });
                 }
 
                 var user = await _context.ManejoPerfiles
@@ -102,33 +149,60 @@ namespace AllkuApi.Controllers
 
                 if (user == null)
                 {
-                    return NotFound(new { Message = $"Usuario '{username}' no encontrado o no es un dueño" });
+                    return NotFound(new PrimeraVezResponse
+                    {
+                        Mensaje = $"Usuario '{username}' no encontrado o no es un dueño",
+                        Exitoso = false
+                    });
                 }
 
-                var esPrimeraVez = !user.UltimoInicioSesion.HasValue;
-
-                return Ok(new
+                return Ok(new PrimeraVezResponse
                 {
-                    EsPrimeraVez = esPrimeraVez,
+                    Mensaje = "Consulta exitosa",
+                    Exitoso = true,
+                    EsPrimeraVez = !user.UltimoInicioSesion.HasValue,
                     Username = username,
                     UltimoInicioSesion = user.UltimoInicioSesion
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new
+                return StatusCode(500, new PrimeraVezResponse
                 {
-                    Message = "Error interno del servidor",
-                    Error = ex.Message,
-                    StackTrace = ex.StackTrace
+                    Mensaje = "Error interno del servidor",
+                    Exitoso = false,
+                    Error = ex.Message
                 });
             }
         }
 
+        // Clases de modelo
         public class LoginRequest
         {
             public string NombreUsuario { get; set; }
             public string Contrasena { get; set; }
+        }
+
+        public class LoginResponse
+        {
+            public string Mensaje { get; set; }
+            public bool Exitoso { get; set; }
+            public string Rol { get; set; }
+            public bool EsPrimeraVez { get; set; }
+            public string CedulaDueno { get; set; }
+            public string CedulaPaseador { get; set; }
+            public string CelularPaseador { get; set; }
+            public string NombrePaseador { get; set; }
+        }
+
+        public class PrimeraVezResponse
+        {
+            public string Mensaje { get; set; }
+            public bool Exitoso { get; set; }
+            public bool EsPrimeraVez { get; set; }
+            public string Username { get; set; }
+            public DateTime? UltimoInicioSesion { get; set; }
+            public string Error { get; set; }
         }
     }
 }

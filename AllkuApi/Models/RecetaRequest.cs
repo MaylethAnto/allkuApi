@@ -12,7 +12,7 @@ namespace AllkuApi.Models
         [Required]
         public string? descripcion_receta { get; set; }
         [Required]
-        public byte[]? foto_receta { get; set; }
+        public IFormFile? foto_receta { get; set; }
         [Required]
         public int? id_canino { get; set; }
     }

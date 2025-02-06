@@ -7,7 +7,6 @@
         public DateTime fecha_historial { get; set; } // Cambiar a DateTime?
         public string tipo_historial { get; set; }
         public string descripcion_historial { get; set; }
-        public bool notificacion_historial { get; set; } // Cambiar a bool?
     }
 
 }

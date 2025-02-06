@@ -40,6 +40,9 @@ namespace AllkuApi.Models
         // Propiedades de navegación
         public Dueno Dueno { get; set; }
 
+        // Propiedad de navegación para la relación uno a muchos con GPS
+        public virtual ICollection<GPS> GPS { get; set; }
+
     }
 
 }

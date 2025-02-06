@@ -1,4 +1,4 @@
-@AllkuApi_HostAddress = http://localhost:5138
+@AllkuApi_HostAddress = http://localhost:44357
 
 GET {{AllkuApi_HostAddress}}/weatherforecast/
 Accept: application/json

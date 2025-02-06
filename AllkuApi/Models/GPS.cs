@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -6,14 +7,31 @@ namespace AllkuApi.Models
     public class GPS
     {
         [Key]
-        public int id_gps { get; set; }
-        public int? id_canino { get; set; }
-        public DateTime? fecha_gps { get; set; }
-        public string? ubicacion_gps { get; set; }
-        public int? pasos_gps { get; set; }
-        public decimal? distancia_km { get; set; }
+        [Column("id_gps")]
+        public int IdGps { get; set; }
 
-        [ForeignKey("id_canino")]
+        [Column("id_canino")]
+        public int IdCanino { get; set; }
+
+        [Column("fecha_gps")]
+        public DateTime? FechaGps { get; set; }
+
+        [Column("distancia_km")]
+        public decimal? DistanciaKm { get; set; }
+
+        [Column("inicio_latitud", TypeName = "decimal(10, 7)")]
+        public decimal? InicioLatitud { get; set; }
+
+        [Column("inicio_longitud", TypeName = "decimal(10, 7)")]
+        public decimal? InicioLongitud { get; set; }
+
+        [Column("fin_latitud", TypeName = "decimal(10, 7)")]
+        public decimal? FinLatitud { get; set; }
+
+        [Column("fin_longitud", TypeName = "decimal(10, 7)")]
+        public decimal? FinLongitud { get; set; }
+
+        [ForeignKey(nameof(IdCanino))]
         public virtual Canino? Canino { get; set; }
     }
 }

@@ -23,9 +23,6 @@ namespace AllkuApi.Models
         [Column("descripcion_historial")]
         public string DescripcionHistorial { get; set; }
 
-        [Column("notificacion_historial")]
-        public bool NotificacionHistorial { get; set; }
-
         // Propiedad de navegación
         [ForeignKey("IdCanino")]
         public Canino Canino { get; set; }

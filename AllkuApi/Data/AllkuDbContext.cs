@@ -17,6 +17,8 @@ namespace AllkuApi.Data
         public DbSet<Paseador> Paseador { get; set; }
         public DbSet<Receta> Receta { get; set; }
         public DbSet<Notificacion> Notificaciones { get; set; }
+        public DbSet<Paseo> Paseo { get; set; }
+        public DbSet<SolicitudPaseo> SolicitudPaseo { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -61,6 +63,44 @@ namespace AllkuApi.Data
                     .HasForeignKey(mp => mp.CedulaPaseador)
                     .IsRequired(false)  // Hacer la relación opcional
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Configuración de GPS
+
+            modelBuilder.Entity<GPS>()
+             .HasOne(g => g.Canino)
+             .WithMany(c => c.GPS) // Assuming Canino has a collection of GPS
+             .HasForeignKey(g => g.IdCanino);
+
+            // Configuración de Paseo
+            modelBuilder.Entity<Paseo>(entity =>
+            {
+                entity.ToTable("Paseo");
+                entity.HasKey(e => e.IdPaseo);
+
+                // Configuración de propiedades
+                entity.Property(e => e.FechaInicio)
+                    .IsRequired();
+
+                entity.Property(e => e.FechaFin)
+                    .IsRequired();
+
+                entity.Property(e => e.DistanciaKm)
+                    .IsRequired()
+                    .HasColumnType("decimal(5,2)"); // ← ¡Clave para evitar errores!
+
+                entity.Property(e => e.EstadoPaseo)
+                    .HasMaxLength(20)
+                    .IsRequired();
+            });
+
+            // Configuración de SolicitudPaseo
+            modelBuilder.Entity<SolicitudPaseo>(entity =>
+            {
+                entity.ToTable("Solicitud_Paseo");
+                entity.HasKey(e => e.IdSolicitud);
+                entity.Property(e => e.EstadoSolicitud).HasMaxLength(20).IsRequired();
+                entity.Property(e => e.FechaSolicitud).HasDefaultValueSql("GETDATE()");
             });
 
             base.OnModelCreating(modelBuilder);
