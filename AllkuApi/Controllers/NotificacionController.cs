@@ -34,7 +34,7 @@ public class NotificacionController : ControllerBase
         {
             Mensaje = notificacionDto.Mensaje,
             NumeroPaseador = notificacionDto.NumeroPaseador,
-            CedulaDueno = canino.CedulaDueno,
+            CedulaDueno = canino.Dueno.CedulaDueno,
             Fecha = DateTime.UtcNow,
             Leida = false
         };
