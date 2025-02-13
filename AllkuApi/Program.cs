@@ -14,7 +14,8 @@ public class Startup
             .ConfigureWebHostDefaults(webBuilder =>
             {
                 // Configura la URL para que escuche en todas las interfaces de red (0.0.0.0) y en el puerto 8080
-                webBuilder.UseUrls("http://0.0.0.0:8080"); // Cambia el puerto aquí si lo deseas
+                var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+                webBuilder.UseUrls($"http://0.0.0.0:{port}");
                 webBuilder.UseStartup<Startup>();
             });
 
