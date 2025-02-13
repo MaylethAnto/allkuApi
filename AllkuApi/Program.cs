@@ -10,14 +10,13 @@ public class Startup
     }
 
     public static IHostBuilder CreateHostBuilder(string[] args) =>
-        Host.CreateDefaultBuilder(args)
-            .ConfigureWebHostDefaults(webBuilder =>
-            {
-                // Configura la URL para que escuche en todas las interfaces de red (0.0.0.0) y en el puerto 8080
-                var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-                webBuilder.UseUrls($"http://0.0.0.0:{port}");
-                webBuilder.UseStartup<Startup>();
-            });
+       Host.CreateDefaultBuilder(args)
+           .ConfigureWebHostDefaults(webBuilder =>
+           {
+               var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+               webBuilder.UseUrls($"http://0.0.0.0:{port}", "https://0.0.0.0:443");
+               webBuilder.UseStartup<Startup>();
+           });
 
     public IConfiguration Configuration { get; }
 
@@ -67,8 +66,6 @@ public class Startup
             });
         }
 
-        // Middleware para redirigir HTTP a HTTPS
-        app.UseHttpsRedirection();
 
         // Middleware para enrutar solicitudes
         app.UseRouting();
