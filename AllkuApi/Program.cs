@@ -13,8 +13,8 @@ public class Startup
         Host.CreateDefaultBuilder(args)
             .ConfigureWebHostDefaults(webBuilder =>
             {
-                // Configura la URL para que escuche en todas las interfaces de red (0.0.0.0) y en el puerto 5000
-                webBuilder.UseUrls("http://0.0.0.0:5138");  // O puedes cambiar el puerto si lo deseas
+                // Configura la URL para que escuche en todas las interfaces de red (0.0.0.0) y en el puerto 8080
+                webBuilder.UseUrls("http://0.0.0.0:8080"); // Cambia el puerto aquí si lo deseas
                 webBuilder.UseStartup<Startup>();
             });
 
@@ -27,15 +27,15 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        // Configurar conexi�n a SQLServer
+        // Configurar conexión a SQL Server
         services.AddDbContext<AllkuDbContext>(options =>
             options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
-        // Inyecci�n de dependencias
+        // Inyección de dependencias
         services.AddScoped<AutenticacionService>();
         services.AddScoped<HashService>();
 
-        // Configuraci�n de CORS
+        // Configuración de CORS
         services.AddCors(options =>
         {
             options.AddPolicy("AllkuPolicy", builder =>
@@ -46,6 +46,7 @@ public class Startup
             });
         });
 
+        // Configuración de controladores y Swagger
         services.AddControllers();
         services.AddSwaggerGen();
     }
@@ -54,15 +55,27 @@ public class Startup
     {
         if (env.IsDevelopment())
         {
+            // Middleware para mostrar errores en desarrollo
             app.UseDeveloperExceptionPage();
+
+            // Middleware para habilitar Swagger
             app.UseSwagger();
-            app.UseSwaggerUI();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Allku API v1");
+            });
         }
 
+        // Middleware para redirigir HTTP a HTTPS
         app.UseHttpsRedirection();
+
+        // Middleware para enrutar solicitudes
         app.UseRouting();
+
+        // Middleware para habilitar CORS
         app.UseCors("AllkuPolicy");
 
+        // Middleware para mapear controladores
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers();
