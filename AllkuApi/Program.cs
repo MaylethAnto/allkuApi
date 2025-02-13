@@ -53,22 +53,28 @@ public class Startup
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        if (env.IsDevelopment())
+        // Habilitar Swagger siempre
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
         {
-            // Middleware para mostrar errores en desarrollo
-            app.UseDeveloperExceptionPage();
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Allku API v1");
+            // Hacer que Swagger UI sea la página principal
+            c.RoutePrefix = string.Empty;
+        });
 
-            // Middleware para habilitar Swagger
-            app.UseSwagger();
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Allku API v1");
-            });
-        }
-
-
-        // Middleware para enrutar solicitudes
         app.UseRouting();
+        app.UseCors("AllkuPolicy");
+
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+        });
+    
+
+
+
+    // Middleware para enrutar solicitudes
+    app.UseRouting();
 
         // Middleware para habilitar CORS
         app.UseCors("AllkuPolicy");
