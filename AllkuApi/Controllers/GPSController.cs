@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 using AllkuApi.Models;
 using Microsoft.EntityFrameworkCore;
@@ -78,7 +79,7 @@ namespace AllkuApi.Controllers
             return Ok(gpsDto);
         }
 
-        [HttpGet("distancia")]
+        [HttpGet("distancia/{id_canino}")]
         public async Task<ActionResult<DistanciaRecorrida>> GetDistanciaRecorrida(int id_canino)
         {
             if (id_canino <= 0)
@@ -86,41 +87,50 @@ namespace AllkuApi.Controllers
                 return BadRequest("El ID del canino es inválido.");
             }
 
-            var distancia = new DistanciaRecorrida();
+            var gpsData = await _context.GPS
+                                        .Where(g => g.IdCanino == id_canino)
+                                        .OrderBy(g => g.FechaGps)
+                                        .ToListAsync();
 
-            try
+            if (!gpsData.Any())
             {
-                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
-                {
-                    await conn.OpenAsync();
-
-                    using (SqlCommand cmd = new SqlCommand("ObtenerDistanciaRecorrida", conn))
-                    {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@id_canino", id_canino);
-
-                        using (SqlDataReader reader = await cmd.ExecuteReaderAsync())
-                        {
-                            if (reader.HasRows && await reader.ReadAsync())
-                            {
-                                distancia.DistanciaTotal = reader["DistanciaTotal"] != DBNull.Value
-                                    ? Convert.ToDecimal(reader["DistanciaTotal"])
-                                    : 0;
-                            }
-                            else
-                            {
-                                distancia.DistanciaTotal = 0; // Si no hay filas, devolver 0
-                            }
-                        }
-                    }
-                }
-
-                return Ok(distancia);
+                return NotFound();
             }
-            catch (Exception ex)
+
+            double totalDistance = 0.0;
+            for (int i = 1; i < gpsData.Count; i++)
             {
-                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+                totalDistance += CalcularDistancia(
+                    (double)gpsData[i - 1].InicioLatitud,
+                    (double)gpsData[i - 1].InicioLongitud,
+                    (double)gpsData[i].FinLatitud,
+                    (double)gpsData[i].FinLongitud);
             }
+
+            var distanciaRecorrida = new DistanciaRecorrida
+            {
+                DistanciaTotal = (decimal)totalDistance
+            };
+
+            return Ok(distanciaRecorrida);
+        }
+
+        private double CalcularDistancia(double lat1, double lon1, double lat2, double lon2)
+        {
+            var R = 6371; // Radio de la Tierra en kilómetros
+            var dLat = ToRadians(lat2 - lat1);
+            var dLon = ToRadians(lon2 - lon1);
+            var lat1Rad = ToRadians(lat1);
+            var lat2Rad = ToRadians(lat2);
+            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                    Math.Sin(dLon / 2) * Math.Sin(dLon / 2) * Math.Cos(lat1Rad) * Math.Cos(lat2Rad);
+            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return R * c; // Distancia en kilómetros
+        }
+
+        private double ToRadians(double angle)
+        {
+            return angle * Math.PI / 180;
         }
 
         [HttpGet("paseos-finalizados/{id_canino}")]
@@ -149,7 +159,7 @@ namespace AllkuApi.Controllers
                         {
                             FechaInicio = x.Paseo.FechaInicio != null ? x.Paseo.FechaInicio : DateTime.MinValue,
                             FechaFin = x.Paseo.FechaFin != null ? x.Paseo.FechaFin : DateTime.MinValue, // Asegúrate de que FechaFin no sea null
-                            DistanciaKm = x.Paseo.DistanciaKm != null ? x.Paseo.DistanciaKm : 0
+                            DistanciaKm = x.Paseo.DistanciaKm ?? 0
                         })
                         .ToListAsync();
 
@@ -166,8 +176,4 @@ namespace AllkuApi.Controllers
             }
         }
     }
-
-
-
-
 }
