@@ -140,7 +140,7 @@ namespace AllkuApi.Controllers
             {
                 if (!await _context.Paseo.AnyAsync() || !await _context.SolicitudPaseo.AnyAsync())
                 {
-                    return NotFound("No hay paseos o solicitudes disponibles.");
+                    return Ok(new { Message = "No hay paseos o solicitudes disponibles." });
                 }
 
                 var paseos = await _context.Paseo
@@ -157,15 +157,15 @@ namespace AllkuApi.Controllers
                         .Where(x => x.Solicitud.IdCanino == id_canino && x.Paseo.EstadoPaseo == "Finalizado")
                         .Select(x => new
                         {
-                            FechaInicio = x.Paseo.FechaInicio != null ? x.Paseo.FechaInicio : DateTime.MinValue,
-                            FechaFin = x.Paseo.FechaFin != null ? x.Paseo.FechaFin : DateTime.MinValue, // Asegúrate de que FechaFin no sea null
+                            FechaInicio = x.Paseo.FechaInicio ?? DateTime.MinValue,
+                            FechaFin = x.Paseo.FechaFin ?? DateTime.MinValue,
                             DistanciaKm = x.Paseo.DistanciaKm ?? 0
                         })
                         .ToListAsync();
 
                 if (paseos == null || !paseos.Any())
                 {
-                    return NotFound("No se encontraron paseos finalizados para el canino especificado.");
+                    return Ok(new { Message = $"No se encontraron paseos finalizados para el canino con ID {id_canino}." });
                 }
 
                 return Ok(paseos);
