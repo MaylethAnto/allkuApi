@@ -214,6 +214,43 @@ namespace AllkuApi.Controllers
                     throw;
                 }
             }
+
+        }
+
+        // PUT: api/Gps/finalizar/{id}
+        [HttpPut("finalizar/{id}")]
+        public async Task<IActionResult> FinalizarGps(int id, [FromBody] FinalizarGpsDto dto)
+        {
+            try
+            {
+                // Buscar el GPS existente
+                var gps = await _context.GPS.FindAsync(id);
+                if (gps == null)
+                {
+                    return NotFound($"No se encontró el registro GPS con ID {id}");
+                }
+
+                // Actualizar solo las coordenadas finales
+                gps.FinLatitud = Math.Round(dto.FinLatitud, 7);
+                gps.FinLongitud = Math.Round(dto.FinLongitud, 7);
+
+                // Guardar cambios
+                _context.Entry(gps).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Coordenadas finales actualizadas correctamente" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error interno: {ex.Message}");
+            }
+        }
+
+        // DTO para finalizar GPS
+        public class FinalizarGpsDto
+        {
+            public decimal FinLatitud { get; set; }
+            public decimal FinLongitud { get; set; }
         }
 
         private bool GpsExists(int id)
