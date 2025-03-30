@@ -21,6 +21,43 @@ namespace AllkuApi.Controllers
             _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
 
+        // GET: api/paseador
+        [HttpGet]
+        public async Task<IActionResult> GetAllPaseadores()
+        {
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+                    var command = new SqlCommand("SELECT * FROM Paseador", connection);
+
+                    var reader = await command.ExecuteReaderAsync();
+                    var paseadores = new List<PaseadorDto>();
+
+                    while (await reader.ReadAsync())
+                    {
+                        paseadores.Add(new PaseadorDto
+                        {
+                            CedulaPaseador = reader.GetString(reader.GetOrdinal("cedula_paseador")),
+                            NombrePaseador = reader.GetString(reader.GetOrdinal("nombre_paseador")),
+                            CelularPaseador = reader.GetString(reader.GetOrdinal("celular_paseador")),
+                            CorreoPaseador = reader.GetString(reader.GetOrdinal("correo_paseador")),
+                            EstaDisponible = reader.GetBoolean(reader.GetOrdinal("esta_disponible"))
+                        });
+                    }
+
+                    return Ok(paseadores);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error details
+                Console.WriteLine("An error occurred: " + ex.Message);
+                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+            }
+        }
+
 
         [HttpGet("CaninosConDuenos")]
         public async Task<ActionResult<IEnumerable<CaninoConDuenoDto>>> GetCaninosConDuenos()

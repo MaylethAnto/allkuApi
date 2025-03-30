@@ -175,5 +175,50 @@ namespace AllkuApi.Controllers
                 return StatusCode(500, $"Error interno: {ex.Message}");
             }
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutGPS(int id, GPSDto gpsDto)
+        {
+            if (id != gpsDto.IdGps)
+            {
+                return BadRequest("ID in URL doesn't match ID in body");
+            }
+
+            var gps = await _context.GPS.FindAsync(id);
+            if (gps == null)
+            {
+                return NotFound();
+            }
+         
+            if (gpsDto.FinLatitud.HasValue)
+                gps.FinLatitud = Math.Round(gpsDto.FinLatitud.Value, 7);
+
+            if (gpsDto.FinLongitud.HasValue)
+                gps.FinLongitud = Math.Round(gpsDto.FinLongitud.Value, 7);
+
+
+            try
+            {
+                _context.Entry(gps).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!GpsExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        private bool GpsExists(int id)
+        {
+            return _context.GPS.Any(e => e.IdGps == id);
+        }
     }
 }
