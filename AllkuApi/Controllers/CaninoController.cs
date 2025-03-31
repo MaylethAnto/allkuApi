@@ -124,6 +124,21 @@ namespace AllkuApi.Controllers
             return Ok("Canino registrado exitosamente.");
         }
 
+        [HttpGet("Caninos/buscar")]
+        public ActionResult<IEnumerable<CaninoDto>> BuscarCaninos(string nombre, string cedulaDueno = null)
+        {
+            var caninos = _context.Canino
+                .Where(c => c.NombreCanino == nombre)
+                .ToList();
+
+            if (!string.IsNullOrEmpty(cedulaDueno))
+            {
+                caninos = caninos.Where(c => c.CedulaDueno == cedulaDueno).ToList();
+            }
+
+            return Ok(caninos);
+        }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> PutCanino(int id, Canino canino)
         {
