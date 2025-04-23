@@ -137,25 +137,28 @@ namespace AllkuApi.Controllers
         {
             try
             {
-                if (!await _context.Paseo.AnyAsync() || !await _context.SolicitudPaseo.AnyAsync())
+                // Verificar si el contexto y las entidades están disponibles
+                if (_context == null)
                 {
-                    return Ok(new { Message = "No hay paseos o solicitudes disponibles." });
+                    return StatusCode(500, "Error: Contexto de base de datos no disponible");
                 }
 
-                var paseos = await (
-                    from paseo in _context.Paseo
-                    join solicitud in _context.SolicitudPaseo
-                    on paseo.IdSolicitud equals solicitud.IdSolicitud
-                    where solicitud.IdCanino == id_canino && paseo.EstadoPaseo == "Finalizado"
-                    select new
+                // Consulta optimizada con protección contra valores nulos
+                var paseos = await _context.Paseo
+                    .Join(_context.SolicitudPaseo,
+                        paseo => paseo.IdSolicitud,
+                        solicitud => solicitud.IdSolicitud,
+                        (paseo, solicitud) => new { Paseo = paseo, Solicitud = solicitud })
+                    .Where(ps => ps.Solicitud.IdCanino == id_canino && ps.Paseo.EstadoPaseo == "Finalizado")
+                    .Select(ps => new
                     {
-                        FechaInicio = paseo.FechaInicio.GetValueOrDefault(),
-                        FechaFin = paseo.FechaFin.GetValueOrDefault(),
-                        DistanciaKm = paseo.DistanciaKm.GetValueOrDefault()
-                    }
-                ).ToListAsync();
+                        FechaInicio = ps.Paseo.FechaInicio.HasValue ? ps.Paseo.FechaInicio.Value : DateTime.MinValue,
+                        FechaFin = ps.Paseo.FechaFin.HasValue ? ps.Paseo.FechaFin.Value : DateTime.MinValue,
+                        DistanciaKm = ps.Paseo.DistanciaKm.HasValue ? ps.Paseo.DistanciaKm.Value : 0m
+                    })
+                    .ToListAsync();
 
-                if (!paseos.Any())
+                if (paseos == null || !paseos.Any())
                 {
                     return Ok(new { Message = $"No se encontraron paseos finalizados para el canino con ID {id_canino}." });
                 }
@@ -164,7 +167,10 @@ namespace AllkuApi.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Error interno: {ex.Message} | {ex.InnerException?.Message}");
+               
+                string errorMessage = $"Error al obtener paseos finalizados: {ex.Message}";
+              
+                return StatusCode(500, errorMessage);
             }
         }
 
