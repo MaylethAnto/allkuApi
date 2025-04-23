@@ -132,48 +132,69 @@ namespace AllkuApi.Controllers
         {
             return angle * Math.PI / 180;
         }
+
+
         [HttpGet("paseos-finalizados/{id_canino}")]
         public async Task<IActionResult> ObtenerPaseosFinalizados(int id_canino)
         {
             try
             {
-                // Verificar si el contexto y las entidades están disponibles
-                if (_context == null)
-                {
-                    return StatusCode(500, "Error: Contexto de base de datos no disponible");
-                }
-
-                // Consulta optimizada con protección contra valores nulos
-                var paseos = await _context.Paseo
-                    .Join(_context.SolicitudPaseo,
-                        paseo => paseo.IdSolicitud,
-                        solicitud => solicitud.IdSolicitud,
-                        (paseo, solicitud) => new { Paseo = paseo, Solicitud = solicitud })
-                    .Where(ps => ps.Solicitud.IdCanino == id_canino && ps.Paseo.EstadoPaseo == "Finalizado")
-                    .Select(ps => new
-                    {
-                        FechaInicio = ps.Paseo.FechaInicio.HasValue ? ps.Paseo.FechaInicio.Value : DateTime.MinValue,
-                        FechaFin = ps.Paseo.FechaFin.HasValue ? ps.Paseo.FechaFin.Value : DateTime.MinValue,
-                        DistanciaKm = ps.Paseo.DistanciaKm.HasValue ? ps.Paseo.DistanciaKm.Value : 0m
-                    })
+                // Verificar primero si hay solicitudes para este canino
+                var solicitudesIds = await _context.SolicitudPaseo
+                    .Where(s => s.IdCanino == id_canino)
+                    .Select(s => s.IdSolicitud)
                     .ToListAsync();
 
-                if (paseos == null || !paseos.Any())
+                if (!solicitudesIds.Any())
+                {
+                    return Ok(new { Message = $"No hay solicitudes para el canino con ID {id_canino}." });
+                }
+
+                // Luego obtener los paseos finalizados de forma segura
+                List<object> resultados = new List<object>();
+
+                // Ejecutar una consulta directa sin proyecciones complejas
+                var paseosRaw = await _context.Paseo
+                    .Where(p => solicitudesIds.Contains(p.IdSolicitud) && p.EstadoPaseo == "Finalizado")
+                    .ToListAsync();
+
+                // Procesar manualmente cada paseo para evitar problemas con nullables
+                foreach (var p in paseosRaw)
+                {
+                    DateTime inicio = DateTime.MinValue;
+                    DateTime fin = DateTime.MinValue;
+                    double distancia = 0;
+
+                    // Asignar valores de forma segura
+                    if (p.FechaInicio.HasValue) inicio = p.FechaInicio.Value;
+                    if (p.FechaFin.HasValue) fin = p.FechaFin.Value;
+                    if (p.DistanciaKm.HasValue) distancia = (double)p.DistanciaKm.Value;
+
+                    resultados.Add(new
+                    {
+                        FechaInicio = inicio,
+                        FechaFin = fin,
+                        DistanciaKm = distancia
+                    });
+                }
+
+                if (resultados.Count == 0)
                 {
                     return Ok(new { Message = $"No se encontraron paseos finalizados para el canino con ID {id_canino}." });
                 }
 
-                return Ok(paseos);
+                return Ok(resultados);
             }
             catch (Exception ex)
             {
-               
-                string errorMessage = $"Error al obtener paseos finalizados: {ex.Message}";
-              
-                return StatusCode(500, errorMessage);
+                // Capturar la excepción específica si es posible
+                if (ex.Message.Contains("Nullable object must have a value"))
+                {
+                    return StatusCode(500, "Error: Se intentó acceder a un valor nulo en la base de datos.");
+                }
+                return StatusCode(500, $"Error al obtener paseos finalizados: {ex.Message}");
             }
         }
-
 
         [HttpPut("{id}")]
         public async Task<IActionResult> PutGPS(int id, GPSDto gpsDto)
