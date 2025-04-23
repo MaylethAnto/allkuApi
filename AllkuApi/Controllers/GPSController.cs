@@ -133,49 +133,109 @@ namespace AllkuApi.Controllers
             return angle * Math.PI / 180;
         }
 
-
         [HttpGet("paseos-finalizados/{id_canino}")]
         public async Task<IActionResult> ObtenerPaseosFinalizados(int id_canino)
         {
             try
             {
-                // Verificar primero si hay solicitudes para este canino
-                var solicitudesIds = await _context.SolicitudPaseo
-                    .Where(s => s.IdCanino == id_canino)
-                    .Select(s => s.IdSolicitud)
-                    .ToListAsync();
+                // Verificar cada paso del proceso de forma independiente
+                // 1. Verificar si el contexto existe
+                if (_context == null)
+                {
+                    return StatusCode(500, "Error: Contexto de base de datos no disponible");
+                }
 
-                if (!solicitudesIds.Any())
+                // 2. Verificar si las tablas existen
+                if (_context.Paseo == null)
+                {
+                    return StatusCode(500, "Error: La tabla Paseo no está disponible en el contexto");
+                }
+
+                if (_context.SolicitudPaseo == null)
+                {
+                    return StatusCode(500, "Error: La tabla SolicitudPaseo no está disponible en el contexto");
+                }
+
+                // 3. Verificar si hay registros en las tablas (de forma segura)
+                bool hayPaseos = false;
+                bool haySolicitudes = false;
+
+                try
+                {
+                    hayPaseos = await _context.Paseo.AnyAsync();
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, $"Error al verificar tabla Paseo: {ex.Message}");
+                }
+
+                try
+                {
+                    haySolicitudes = await _context.SolicitudPaseo.AnyAsync();
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, $"Error al verificar tabla SolicitudPaseo: {ex.Message}");
+                }
+
+                if (!hayPaseos || !haySolicitudes)
+                {
+                    return Ok(new { Message = "No hay paseos o solicitudes disponibles." });
+                }
+
+                // 4. Obtener las solicitudes del canino de forma segura
+                List<int> solicitudesIds = new List<int>();
+                try
+                {
+                    solicitudesIds = await _context.SolicitudPaseo
+                        .Where(s => s.IdCanino == id_canino)
+                        .Select(s => s.IdSolicitud)
+                        .ToListAsync();
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, $"Error al buscar solicitudes: {ex.Message}");
+                }
+
+                if (solicitudesIds.Count == 0)
                 {
                     return Ok(new { Message = $"No hay solicitudes para el canino con ID {id_canino}." });
                 }
 
-                // Luego obtener los paseos finalizados de forma segura
+                // 5. Obtener los paseos finalizados de forma manual
                 List<object> resultados = new List<object>();
 
-                // Ejecutar una consulta directa sin proyecciones complejas
-                var paseosRaw = await _context.Paseo
-                    .Where(p => solicitudesIds.Contains(p.IdSolicitud) && p.EstadoPaseo == "Finalizado")
-                    .ToListAsync();
+                // Usar ToList() para materializar los resultados primero
+                List<Paseo> paseosRaw = new List<Paseo>();
+                try
+                {
+                    paseosRaw = await _context.Paseo
+                        .Where(p => solicitudesIds.Contains(p.IdSolicitud) && p.EstadoPaseo == "Finalizado")
+                        .ToListAsync();
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, $"Error al obtener paseos: {ex.Message}");
+                }
 
-                // Procesar manualmente cada paseo para evitar problemas con nullables
+                // 6. Procesar cada paseo de forma individual
                 foreach (var p in paseosRaw)
                 {
-                    DateTime inicio = DateTime.MinValue;
-                    DateTime fin = DateTime.MinValue;
-                    double distancia = 0;
-
-                    // Asignar valores de forma segura
-                    if (p.FechaInicio.HasValue) inicio = p.FechaInicio.Value;
-                    if (p.FechaFin.HasValue) fin = p.FechaFin.Value;
-                    if (p.DistanciaKm.HasValue) distancia = (double)p.DistanciaKm.Value;
-
-                    resultados.Add(new
+                    try
                     {
-                        FechaInicio = inicio,
-                        FechaFin = fin,
-                        DistanciaKm = distancia
-                    });
+                        resultados.Add(new
+                        {
+                            FechaInicio = p.FechaInicio != null ? p.FechaInicio.Value : DateTime.MinValue,
+                            FechaFin = p.FechaFin != null ? p.FechaFin.Value : DateTime.MinValue,
+                            DistanciaKm = p.DistanciaKm != null ? (double)p.DistanciaKm.Value : 0.0
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        // Registrar el error pero continuar con los demás paseos
+                        // Esto nos ayuda a identificar qué paseo específico está causando problemas
+                        Console.WriteLine($"Error al procesar paseo ID {p.IdPaseo}: {ex.Message}");
+                    }
                 }
 
                 if (resultados.Count == 0)
@@ -187,11 +247,6 @@ namespace AllkuApi.Controllers
             }
             catch (Exception ex)
             {
-                // Capturar la excepción específica si es posible
-                if (ex.Message.Contains("Nullable object must have a value"))
-                {
-                    return StatusCode(500, "Error: Se intentó acceder a un valor nulo en la base de datos.");
-                }
                 return StatusCode(500, $"Error al obtener paseos finalizados: {ex.Message}");
             }
         }
