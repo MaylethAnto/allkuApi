@@ -132,7 +132,6 @@ namespace AllkuApi.Controllers
         {
             return angle * Math.PI / 180;
         }
-
         [HttpGet("paseos-finalizados/{id_canino}")]
         public async Task<IActionResult> ObtenerPaseosFinalizados(int id_canino)
         {
@@ -144,21 +143,19 @@ namespace AllkuApi.Controllers
                 }
 
                 var paseos = await (
-                     from paseo in _context.Paseo
-                     join solicitud in _context.SolicitudPaseo
-                     on paseo.IdSolicitud equals solicitud.IdSolicitud
-                     where solicitud.IdCanino == id_canino && paseo.EstadoPaseo == "Finalizado"
-                     select new
-                     {
-                         FechaInicio = paseo.FechaInicio.HasValue ? paseo.FechaInicio.Value : DateTime.MinValue,
-                         FechaFin = paseo.FechaFin.HasValue ? paseo.FechaFin.Value : DateTime.MinValue,
-                         DistanciaKm = paseo.DistanciaKm.HasValue ? paseo.DistanciaKm.Value : 0
-                     }
+                    from paseo in _context.Paseo
+                    join solicitud in _context.SolicitudPaseo
+                    on paseo.IdSolicitud equals solicitud.IdSolicitud
+                    where solicitud.IdCanino == id_canino && paseo.EstadoPaseo == "Finalizado"
+                    select new
+                    {
+                        FechaInicio = paseo.FechaInicio.GetValueOrDefault(),
+                        FechaFin = paseo.FechaFin.GetValueOrDefault(),
+                        DistanciaKm = paseo.DistanciaKm.GetValueOrDefault()
+                    }
+                ).ToListAsync();
 
-                 ).ToListAsync();
-
-
-                if (paseos == null || !paseos.Any())
+                if (!paseos.Any())
                 {
                     return Ok(new { Message = $"No se encontraron paseos finalizados para el canino con ID {id_canino}." });
                 }
@@ -169,8 +166,8 @@ namespace AllkuApi.Controllers
             {
                 return StatusCode(500, $"Error interno: {ex.Message} | {ex.InnerException?.Message}");
             }
-
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> PutGPS(int id, GPSDto gpsDto)
