@@ -143,25 +143,19 @@ namespace AllkuApi.Controllers
                     return Ok(new { Message = "No hay paseos o solicitudes disponibles." });
                 }
 
-                var paseos = await _context.Paseo
-                        .Join(
-                            _context.SolicitudPaseo,
-                            paseo => paseo.IdSolicitud,
-                            solicitud => solicitud.IdSolicitud,
-                            (paseo, solicitud) => new
-                            {
-                                Paseo = paseo,
-                                Solicitud = solicitud
-                            }
-                        )
-                        .Where(x => x.Solicitud.IdCanino == id_canino && x.Paseo.EstadoPaseo == "Finalizado")
-                        .Select(x => new
-                        {
-                            FechaInicio = x.Paseo.FechaInicio ?? DateTime.MinValue,
-                            FechaFin = x.Paseo.FechaFin ?? DateTime.MinValue,
-                            DistanciaKm = x.Paseo.DistanciaKm ?? 0
-                        })
-                        .ToListAsync();
+                var paseos = await (
+                     from paseo in _context.Paseo
+                     join solicitud in _context.SolicitudPaseo
+                     on paseo.IdSolicitud equals solicitud.IdSolicitud
+                     where solicitud.IdCanino == id_canino && paseo.EstadoPaseo == "Finalizado"
+                     select new
+                     {
+                         FechaInicio = paseo.FechaInicio ?? DateTime.MinValue,
+                         FechaFin = paseo.FechaFin ?? DateTime.MinValue,
+                         DistanciaKm = paseo.DistanciaKm ?? 0
+                     }
+                 ).ToListAsync();
+
 
                 if (paseos == null || !paseos.Any())
                 {
@@ -172,8 +166,9 @@ namespace AllkuApi.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Error interno: {ex.Message}");
+                return StatusCode(500, $"Error interno: {ex.Message} | {ex.InnerException?.Message}");
             }
+
         }
 
         [HttpPut("{id}")]
