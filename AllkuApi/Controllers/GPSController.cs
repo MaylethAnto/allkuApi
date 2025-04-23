@@ -138,116 +138,38 @@ namespace AllkuApi.Controllers
         {
             try
             {
-                // Verificar cada paso del proceso de forma independiente
-                // 1. Verificar si el contexto existe
+                // Verificar que el contexto está disponible
                 if (_context == null)
                 {
-                    return StatusCode(500, "Error: Contexto de base de datos no disponible");
+                    return StatusCode(500, "Error: Contexto no disponible");
                 }
 
-                // 2. Verificar si las tablas existen
-                if (_context.Paseo == null)
-                {
-                    return StatusCode(500, "Error: La tabla Paseo no está disponible en el contexto");
-                }
-
-                if (_context.SolicitudPaseo == null)
-                {
-                    return StatusCode(500, "Error: La tabla SolicitudPaseo no está disponible en el contexto");
-                }
-
-                // 3. Verificar si hay registros en las tablas (de forma segura)
-                bool hayPaseos = false;
-                bool haySolicitudes = false;
-
-                try
-                {
-                    hayPaseos = await _context.Paseo.AnyAsync();
-                }
-                catch (Exception ex)
-                {
-                    return StatusCode(500, $"Error al verificar tabla Paseo: {ex.Message}");
-                }
-
-                try
-                {
-                    haySolicitudes = await _context.SolicitudPaseo.AnyAsync();
-                }
-                catch (Exception ex)
-                {
-                    return StatusCode(500, $"Error al verificar tabla SolicitudPaseo: {ex.Message}");
-                }
-
-                if (!hayPaseos || !haySolicitudes)
-                {
-                    return Ok(new { Message = "No hay paseos o solicitudes disponibles." });
-                }
-
-                // 4. Obtener las solicitudes del canino de forma segura
-                List<int> solicitudesIds = new List<int>();
-                try
-                {
-                    solicitudesIds = await _context.SolicitudPaseo
-                        .Where(s => s.IdCanino == id_canino)
-                        .Select(s => s.IdSolicitud)
-                        .ToListAsync();
-                }
-                catch (Exception ex)
-                {
-                    return StatusCode(500, $"Error al buscar solicitudes: {ex.Message}");
-                }
-
-                if (solicitudesIds.Count == 0)
-                {
-                    return Ok(new { Message = $"No hay solicitudes para el canino con ID {id_canino}." });
-                }
-
-                // 5. Obtener los paseos finalizados de forma manual
-                List<object> resultados = new List<object>();
-
-                // Usar ToList() para materializar los resultados primero
-                List<Paseo> paseosRaw = new List<Paseo>();
-                try
-                {
-                    paseosRaw = await _context.Paseo
-                        .Where(p => solicitudesIds.Contains(p.IdSolicitud) && p.EstadoPaseo == "Finalizado")
-                        .ToListAsync();
-                }
-                catch (Exception ex)
-                {
-                    return StatusCode(500, $"Error al obtener paseos: {ex.Message}");
-                }
-
-                // 6. Procesar cada paseo de forma individual
-                foreach (var p in paseosRaw)
-                {
-                    try
+                // Buscar en la tabla GPS por id_canino
+                var datosGps = await _context.GPS
+                    .Where(g => g.IdCanino == id_canino)
+                    .Select(g => new
                     {
-                        resultados.Add(new
-                        {
-                            FechaInicio = p.FechaInicio != null ? p.FechaInicio.Value : DateTime.MinValue,
-                            FechaFin = p.FechaFin != null ? p.FechaFin.Value : DateTime.MinValue,
-                            DistanciaKm = p.DistanciaKm != null ? (double)p.DistanciaKm.Value : 0.0
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        // Registrar el error pero continuar con los demás paseos
-                        // Esto nos ayuda a identificar qué paseo específico está causando problemas
-                        Console.WriteLine($"Error al procesar paseo ID {p.IdPaseo}: {ex.Message}");
-                    }
-                }
+                        id_gps = g.IdGps,
+                        id_canino = g.IdCanino,
+                        fecha_gps = g.FechaGps,
+                        distancia_km = g.DistanciaKm,
+                        inicio_latitud = g.InicioLatitud,
+                        inicio_longitud = g.InicioLongitud,
+                        fin_latitud = g.FinLatitud,
+                        fin_longitud = g.FinLongitud
+                    })
+                    .ToListAsync();
 
-                if (resultados.Count == 0)
+                if (datosGps == null || !datosGps.Any())
                 {
-                    return Ok(new { Message = $"No se encontraron paseos finalizados para el canino con ID {id_canino}." });
+                    return Ok(new { Message = $"No se encontraron datos GPS para el canino con ID {id_canino}." });
                 }
 
-                return Ok(resultados);
+                return Ok(datosGps);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Error al obtener paseos finalizados: {ex.Message}");
+                return StatusCode(500, $"Error al obtener datos GPS: {ex.Message}");
             }
         }
 
