@@ -150,10 +150,11 @@ namespace AllkuApi.Controllers
                      where solicitud.IdCanino == id_canino && paseo.EstadoPaseo == "Finalizado"
                      select new
                      {
-                         FechaInicio = paseo.FechaInicio ?? DateTime.MinValue,
-                         FechaFin = paseo.FechaFin ?? DateTime.MinValue,
-                         DistanciaKm = paseo.DistanciaKm ?? 0
+                         FechaInicio = paseo.FechaInicio.HasValue ? paseo.FechaInicio.Value : DateTime.MinValue,
+                         FechaFin = paseo.FechaFin.HasValue ? paseo.FechaFin.Value : DateTime.MinValue,
+                         DistanciaKm = paseo.DistanciaKm.HasValue ? paseo.DistanciaKm.Value : 0
                      }
+
                  ).ToListAsync();
 
 
